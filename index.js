@@ -48,7 +48,3 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 })
 
 client.login(process.env.WAVEBOT_TOKEN)
-
-/* Remote server instructions (SSH) */
-// * To upload all local files to server: $ scp -r * root@178.62.82.252:/root/bot/
-// * SSH into server: $ ssh root@[ip-adress]
