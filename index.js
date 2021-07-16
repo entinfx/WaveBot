@@ -1,6 +1,8 @@
 const Discord = require('discord.js')
 const client = new Discord.Client()
 
+const moment = require('moment')
+
 const namePrefix = '👋'
 const namePrefixTimeoutLength = 7000
 
@@ -14,9 +16,9 @@ function userInfo(user) {
 
 function setNicknameForMember(nickname, member) {
     member.setNickname(nickname).then(message => {
-        console.log(`Set nickname '${nickname}' for member ${userInfo(member.user)}. ${message}`)
+        console.log(`${moment().format()} Set nickname '${nickname}' for member ${userInfo(member.user)}. ${message}`)
     }).catch(message => {
-        console.log(`Failed to set nickname '${nickname}' for member ${userInfo(member.user)}. ${message}`)
+        console.log(`${moment().format()} Failed to set nickname '${nickname}' for member ${userInfo(member.user)}. ${message}`)
     })
 }
 
@@ -27,9 +29,9 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
     if (userJoinedChannel) {
         if (!oldState.channel) {
-            console.log(`${newState.member.user.tag} joined '${newState.channel.name}'`)
+            console.log(`${moment().format()} ${newState.member.user.tag} joined ${newState.channel.name}`)
         } else {
-            console.log(`${newState.member.user.tag} moved to '${newState.channel.name}' from '${oldState.channel.name}'`)
+            console.log(`${moment().format()} ${newState.member.user.tag} moved to ${newState.channel.name} from ${oldState.channel.name}`)
         }
 
         if (timers.get(newState.member.user.id)) {
@@ -47,7 +49,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
         timers.set(newState.member.user.id, timer)
     } else if (userLeftChannel) {
-        console.log(`${newState.member.user.tag} left '${oldState.channel.name}'`)
+        console.log(`${moment().format()} ${newState.member.user.tag} left ${oldState.channel.name}`)
 
         if (timers.get(newState.member.user.id)) {
             clearTimeout(timers.get(newState.member.user.id))
