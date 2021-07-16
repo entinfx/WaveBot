@@ -2,21 +2,21 @@ const Discord = require('discord.js')
 const client = new Discord.Client()
 
 const namePrefix = '👋'
-const namePrefixTimeout = 7000
+const namePrefixTimeoutLength = 7000
 
-let timeoutFunction = null
+let timers = new Map()
 
 client.on('ready', () => { console.log('Ready.') })
 
-function userInfo(member) {
-    return `${member.user.tag} <@!${member.user.id}>`
+function userInfo(user) {
+    return `${user.tag} <@!${user.id}>`
 }
 
 function setNicknameForMember(nickname, member) {
     member.setNickname(nickname).then(message => {
-        console.log(`Set nickname '${nickname}' for member ${userInfo(member)}. ${message}`)
+        console.log(`Set nickname '${nickname}' for member ${userInfo(member.user)}. ${message}`)
     }).catch(message => {
-        console.log(`Failed to set nickname '${nickname}' for member ${userInfo(member)}. ${message}`)
+        console.log(`Failed to set nickname '${nickname}' for member ${userInfo(member.user)}. ${message}`)
     })
 }
 
@@ -26,20 +26,33 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     const { displayName } = newState.member
 
     if (userJoinedChannel) {
-        console.log(`${newState.member.user.tag} joined '${newState.channel.name}'`)
+        if (!oldState.channel) {
+            console.log(`${newState.member.user.tag} joined '${newState.channel.name}'`)
+        } else {
+            console.log(`${newState.member.user.tag} moved to '${newState.channel.name}' from '${oldState.channel.name}'`)
+        }
 
-        clearTimeout(timeoutFunction)
+        if (timers.get(newState.member.user.id)) {
+            clearTimeout(timers.get(newState.member.user.id))
+            timers.delete(newState.member.user.id)
+        }
 
         if (!displayName.startsWith(namePrefix)) {
             setNicknameForMember(`${namePrefix}${displayName}`, newState.member)
         }
 
-        timeoutFunction = setTimeout(() => {
+        let timer = setTimeout(() => {
             setNicknameForMember(`${displayName.replace(namePrefix, '')}`, newState.member)
-        }, namePrefixTimeout)
+        }, namePrefixTimeoutLength)
+
+        timers.set(newState.member.user.id, timer)
     } else if (userLeftChannel) {
         console.log(`${newState.member.user.tag} left '${oldState.channel.name}'`)
-        clearTimeout(timeoutFunction)
+
+        if (timers.get(newState.member.user.id)) {
+            clearTimeout(timers.get(newState.member.user.id))
+            timers.delete(newState.member.user.id)
+        }
 
         if (displayName.startsWith(namePrefix)) {
             setNicknameForMember(`${displayName.replace(namePrefix, '')}`, newState.member)
