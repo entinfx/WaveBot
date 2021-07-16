@@ -12,5 +12,4 @@ $ WAVEBOT_TOKEN=your_discord_bot_token node index.js
 ### TODO
 * Add timestamps to console logs
 * Add command interface to set prefix string, clear all nicknames
-* Use PM2 to handle Node on the server
 * Graceful shutdown (e.g. reset nicknames on shutdown)
