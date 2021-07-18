@@ -12,14 +12,14 @@ let timers = new Map()
 client.on('ready', () => { console.log('Ready.') })
 
 function memberInfo(member) {
-    return `In ${member.guild.name} ${member.displayName} (${member.user.tag})`
+    return `${member.guild.name}: ${member.displayName} (${member.user.tag})`
 }
 
 function setNicknameForMember(nickname, member) {
     member.setNickname(nickname).then(message => {
-        console.log(`${moment().format()} Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} -> Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
     }).catch(message => {
-        console.log(`${moment().format()} Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} -> Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
     })
 }
 
