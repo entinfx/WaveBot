@@ -3,8 +3,9 @@ const client = new Discord.Client()
 
 const moment = require('moment')
 
-const namePrefix = '👋'
-const namePrefixTimeoutLength = 7000
+const config = require('./config.json')
+const { namePrefix } = config
+const namePrefixTimeoutLength = parseInt(config.namePrefixTimeoutLength)
 
 let timers = new Map()
 
