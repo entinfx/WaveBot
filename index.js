@@ -17,9 +17,9 @@ function memberInfo(member) {
 
 function setNicknameForMember(nickname, member) {
     member.setNickname(nickname).then(message => {
-        console.log(`${moment().format()} > Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} -> Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
     }).catch(message => {
-        console.log(`${moment().format()} > Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} -x Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
     })
 }
 
