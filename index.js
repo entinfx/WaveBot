@@ -17,9 +17,9 @@ function memberInfo(member) {
 
 function setNicknameForMember(nickname, member) {
     member.setNickname(nickname).then(message => {
-        console.log(`${moment().format()} -> Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} * Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
     }).catch(message => {
-        console.log(`${moment().format()} -> Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} ! Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
     })
 }
 
@@ -30,9 +30,9 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
     if (userJoinedChannel) {
         if (!oldState.channel) {
-            console.log(`${moment().format()} ${memberInfo(newState.member)} joined ${newState.channel.name}`)
+            console.log(`${moment().format()} -> ${memberInfo(newState.member)} joined ${newState.channel.name}`)
         } else {
-            console.log(`${moment().format()} ${memberInfo(newState.member)} moved to ${newState.channel.name} from ${oldState.channel.name}`)
+            console.log(`${moment().format()} -> ${memberInfo(newState.member)} moved to ${newState.channel.name} from ${oldState.channel.name}`)
         }
 
         if (timers.get(newState.member.user.id)) {
@@ -50,7 +50,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
         timers.set(newState.member.user.id, timer)
     } else if (userLeftChannel) {
-        console.log(`${moment().format()} ${memberInfo(newState.member)} left ${oldState.channel.name}`)
+        console.log(`${moment().format()} <- ${memberInfo(newState.member)} left ${oldState.channel.name}`)
 
         if (timers.get(newState.member.user.id)) {
             clearTimeout(timers.get(newState.member.user.id))
