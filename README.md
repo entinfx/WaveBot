@@ -10,5 +10,5 @@ $ WAVEBOT_TOKEN=your_discord_bot_token node index.js
 ```
 
 ### TODO
-* Add command interface to set prefix string, clear all nicknames, min users limit, etc.
 * Graceful shutdown (e.g. reset nicknames on shutdown)
+* Add command interface to set/lookup prefix character

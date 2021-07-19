@@ -23,6 +23,15 @@ function setNicknameForMember(nickname, member) {
     })
 }
 
+function shutdown() {
+    console.log('-! Gracefully shutting down. Removing nickname prefixes...')
+
+    timers.forEach((value, key) => {
+        setNicknameForMember(`${key.displayName.replace(namePrefix, '')}`, key)
+        timers.delete(key)
+    })
+}
+
 client.on('voiceStateUpdate', (oldState, newState) => {
     const userLeftChannel = newState.channel === null
     const userJoinedChannel = (oldState.channel != newState.channel) && !userLeftChannel
@@ -35,9 +44,9 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             console.log(`${moment().format()} ${memberInfo(newState.member)} moved to ${newState.channel.name} from ${oldState.channel.name}`)
         }
 
-        if (timers.get(newState.member.user.id)) {
-            clearTimeout(timers.get(newState.member.user.id))
-            timers.delete(newState.member.user.id)
+        if (timers.get(newState.member)) {
+            clearTimeout(timers.get(newState.member))
+            timers.delete(newState.member)
         }
 
         if (!displayName.startsWith(namePrefix)) {
@@ -48,13 +57,13 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             setNicknameForMember(`${displayName.replace(namePrefix, '')}`, newState.member)
         }, namePrefixTimeoutLength)
 
-        timers.set(newState.member.user.id, timer)
+        timers.set(newState.member, timer)
     } else if (userLeftChannel) {
         console.log(`${moment().format()} ${memberInfo(newState.member)} left ${oldState.channel.name}`)
 
-        if (timers.get(newState.member.user.id)) {
-            clearTimeout(timers.get(newState.member.user.id))
-            timers.delete(newState.member.user.id)
+        if (timers.get(newState.member)) {
+            clearTimeout(timers.get(newState.member))
+            timers.delete(newState.member)
         }
 
         if (displayName.startsWith(namePrefix)) {
