@@ -1,15 +1,57 @@
 const Discord = require('discord.js')
-const client = new Discord.Client()
-
 const moment = require('moment')
 
 const config = require('./config.json')
+
+const client = new Discord.Client()
 const { namePrefix } = config
+const minimumNumberOfUsers = parseInt(config.minimumNumberOfUsers) // inclusive
 const namePrefixTimeoutLength = parseInt(config.namePrefixTimeoutLength)
 
 let timers = new Map()
 
 client.on('ready', () => { console.log('Ready.') })
+
+client.on('voiceStateUpdate', (oldState, newState) => {
+    const userLeftChannel = newState.channel === null
+    const userJoinedChannel = (oldState.channel != newState.channel) && !userLeftChannel
+
+    if (userJoinedChannel) {
+        const previousChannel = oldState.channel ? ` (moved from ${oldState.channel.name})` : ''
+        console.log(`${moment().format()} -> ${memberInfo(newState.member)} joined ${newState.channel.name}${previousChannel}`)
+
+        removeTimerForMember(newState.member)
+
+        if (newState.channel.members.size >= minimumNumberOfUsers) {
+            if (!newState.member.displayName.startsWith(namePrefix)) {
+                setNicknameForMember(`${namePrefix}${newState.member.displayName}`, newState.member)
+            }
+
+            const timer = setTimeout(() => {
+                setNicknameForMember(newState.member.displayName.replace(namePrefix, ''), newState.member, () => {
+                    removeTimerForMember(newState.member)
+                })
+            }, namePrefixTimeoutLength)
+
+            timers.set(newState.member, timer)
+        } else {
+            if (newState.member.displayName.startsWith(namePrefix)) {
+                setNicknameForMember(newState.member.displayName.replace(namePrefix, ''), newState.member)
+            }
+            console.log(`${moment().format()} Minimum number of members in channel is not reached`)
+        }
+    } else if (userLeftChannel) {
+        console.log(`${moment().format()} <- ${memberInfo(newState.member)} left ${oldState.channel.name}`)
+        removeTimerForMember(newState.member)
+
+        if (newState.member.displayName.startsWith(namePrefix)) {
+            setNicknameForMember(newState.member.displayName.replace(namePrefix, ''), newState.member)
+        }
+
+    }
+})
+
+client.login(process.env.WAVEBOT_TOKEN)
 
 function memberInfo(member) {
     return `${member.guild.name}: ${member.displayName} (${member.user.tag})`
@@ -17,7 +59,7 @@ function memberInfo(member) {
 
 function setNicknameForMember(nickname, member, callback) {
     member.setNickname(nickname).then(message => {
-        console.log(`${moment().format()} Set nickname '${nickname}' for member ${member.displayName}. ${message}`)
+        console.log(`${moment().format()} Set nickname '${nickname}' for member ${member.displayName}`)
         if (typeof callback === 'function' && callback()) callback()
     }).catch(message => {
         console.log(`${moment().format()} Failed to set nickname '${nickname}' for member ${member.displayName}. ${message}`)
@@ -25,77 +67,41 @@ function setNicknameForMember(nickname, member, callback) {
     })
 }
 
-client.on('voiceStateUpdate', (oldState, newState) => {
-    const userLeftChannel = newState.channel === null
-    const userJoinedChannel = (oldState.channel != newState.channel) && !userLeftChannel
-    const { displayName } = newState.member
-
-    if (userJoinedChannel) {
-        if (!oldState.channel) {
-            console.log(`${moment().format()} -> ${memberInfo(newState.member)} joined ${newState.channel.name}`)
-        } else {
-            console.log(`${moment().format()} -> ${memberInfo(newState.member)} moved to ${newState.channel.name} from ${oldState.channel.name}`)
-        }
-
-        if (timers.get(newState.member)) {
-            clearTimeout(timers.get(newState.member))
-            timers.delete(newState.member)
-        }
-
-        if (!displayName.startsWith(namePrefix)) {
-            setNicknameForMember(`${namePrefix}${displayName}`, newState.member)
-        }
-
-        let timer = setTimeout(() => {
-            setNicknameForMember(`${displayName.replace(namePrefix, '')}`, newState.member)
-            timers.delete(newState.member)
-        }, namePrefixTimeoutLength)
-
-        timers.set(newState.member, timer)
-    } else if (userLeftChannel) {
-        console.log(`${moment().format()} <- ${memberInfo(newState.member)} left ${oldState.channel.name}`)
-
-        if (timers.get(newState.member)) {
-            clearTimeout(timers.get(newState.member))
-            timers.delete(newState.member)
-        }
-
-        if (displayName.startsWith(namePrefix)) {
-            setNicknameForMember(`${displayName.replace(namePrefix, '')}`, newState.member)
-        }
+function removeTimerForMember(member) {
+    if (timers.get(member)) {
+        clearTimeout(timers.get(member))
+        timers.delete(member)
+        console.log(`${moment().format()} Cancelled and removed timer for member ${member.displayName}`)
     }
-})
+}
 
-client.login(process.env.WAVEBOT_TOKEN)
-
-/* Graceful shutdown */
 function shutdown(callback) {
+    console.log(`${moment().format()} Gracefully shutting down...`)
+
     const totalNumberOfTimers = timers.size
     let numberOfTimersDeleted = 0
 
     if (totalNumberOfTimers) {
-        console.log(`${totalNumberOfTimers} hanging timers found, cleaning up...`)
+        console.log(`${moment().format()} ${totalNumberOfTimers} hanging timers found`)
         timers.forEach((value, key) => {
-            setNicknameForMember(`${key.displayName.replace(namePrefix, '')}`, key, () => {
-                timers.delete(key)
+            setNicknameForMember(key.displayName.replace(namePrefix, ''), key, () => {
+                removeTimerForMember(key)
                 numberOfTimersDeleted++
 
                 if (numberOfTimersDeleted === totalNumberOfTimers) {
+                    console.log(`${moment().format()} Shutdown complete`)
                     callback(0)
                     return
                 }
             })
         })
     } else {
-        console.log(`No hanging timers found.`)
+        console.log(`${moment().format()} No hanging timers found`)
+        console.log(`${moment().format()} Shutdown complete`)
         callback(0)
     }
 }
 
 process.on('SIGINT', () => {
-    console.log('Gracefully shutting down...')
-    shutdown((code) => {
-        console.log(`Shutdown complete.`)
-        process.exit(code)
-    })
+    shutdown((code) => { process.exit(code) })
 })
