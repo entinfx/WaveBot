@@ -2,6 +2,7 @@ const Discord = require('discord.js')
 const moment = require('moment')
 
 const config = require('./config.json')
+const command = require('./command.js')
 
 const client = new Discord.Client()
 const { namePrefix } = config
@@ -9,14 +10,44 @@ const minimumNumberOfUsers = parseInt(config.minimumNumberOfUsers) // inclusive
 const namePrefixTimeoutLength = parseInt(config.namePrefixTimeoutLength)
 
 let timers = new Map()
+// let channelRoles = new Array()
 
-client.on('ready', () => { console.log('Ready.') })
+console.log(`${moment().format()} Starting in ${process.env.NODE_ENV.toUpperCase()}`)
+
+client.on('ready', () => {
+    console.log(`${moment().format()} Ready`)
+
+    /* Commands */
+    command(client, '', ['(╯°□°）╯︵ ┻━┻'], message => {
+        message.channel.send('┬─┬ ノ( ゜-゜ノ)')
+    })
+
+    command(client, '!', ['ping'], message => {
+        message.channel.send('pong')
+    })
+})
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     const userLeftChannel = newState.channel === null
     const userJoinedChannel = (oldState.channel != newState.channel) && !userLeftChannel
 
     if (userJoinedChannel) {
+        // if role with current channel name doesn't exist
+        //     create role with current channel name
+        // assign role to user
+
+        if (!newState.guild.roles.cache.some(role => role.name === newState.channel.name )) {
+            newState.guild.roles.create({
+                data: {
+                    name: newState.channel.name,
+                    color: 'BLUE'
+                },
+                reason: 'Test reason'
+            }).then(console.log('success')).catch(console.log('fail'))
+        }
+
+        // end of changes here
+
         const previousChannel = oldState.channel ? ` (moved from ${oldState.channel.name})` : ''
         console.log(`${moment().format()} -> ${memberInfo(newState.member)} joined ${newState.channel.name}${previousChannel}`)
 
@@ -41,6 +72,8 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             console.log(`${moment().format()} Minimum number of members in channel is not reached`)
         }
     } else if (userLeftChannel) {
+        // remove role
+
         console.log(`${moment().format()} <- ${memberInfo(newState.member)} left ${oldState.channel.name}`)
         removeTimerForMember(newState.member)
 
