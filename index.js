@@ -12,7 +12,7 @@ const namePrefixTimeoutLength = parseInt(config.namePrefixTimeoutLength)
 let timers = new Map()
 // let channelRoles = new Array()
 
-console.log(`${moment().format()} Starting in ${process.env.NODE_ENV.toUpperCase()}`)
+// console.log(`${moment().format()} Starting in ${process.env.NODE_ENV.toUpperCase()}`)
 
 client.on('ready', () => {
     console.log(`${moment().format()} Ready`)
@@ -22,35 +22,60 @@ client.on('ready', () => {
         message.channel.send('┬─┬ ノ( ゜-゜ノ)')
     })
 
-    command(client, '!', ['ping'], message => {
-        message.channel.send('pong')
+    command(client, '!', ['countdown'], message => {
+        message.channel.send(moment().to([2021, 9, 28]))
     })
 })
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     const userLeftChannel = newState.channel === null
     const userJoinedChannel = (oldState.channel != newState.channel) && !userLeftChannel
+    const previousChannel = oldState.channel ? ` (moved from ${oldState.channel.name})` : ''
 
     if (userJoinedChannel) {
-        // if role with current channel name doesn't exist
-        //     create role with current channel name
-        // assign role to user
-
-        if (!newState.guild.roles.cache.some(role => role.name === newState.channel.name )) {
-            newState.guild.roles.create({
-                data: {
-                    name: newState.channel.name,
-                    color: 'BLUE'
-                },
-                reason: 'Test reason'
-            }).then(console.log('success')).catch(console.log('fail'))
-        }
-
-        // end of changes here
-
-        const previousChannel = oldState.channel ? ` (moved from ${oldState.channel.name})` : ''
         console.log(`${moment().format()} -> ${memberInfo(newState.member)} joined ${newState.channel.name}${previousChannel}`)
 
+        // Bandaid cause I cba it's 5 in the morning
+        // TODO: Clean up old toles on channel switch. The 'userLeftChannel' branch doesn't fire
+        //       on channel switch, only on full leave
+        if (oldState.channel) {
+            const oldRole = newState.member.guild.roles.cache.find(role => role.name === oldState.channel.name)
+            if (oldRole) {
+                newState.member.roles.remove(oldRole)
+                console.log(`${moment().format()} Removed role ${oldRole.name} from ${memberInfo(newState.member)}`)
+            }
+        }
+
+        /* Create pingable channel role on user join channel */
+        // WARNING: First ID in config contains test server ID. Check before pushing in production!
+        // TODO: * Make roles pingable only by subs
+        //       * Store role ID's and users in a map
+        //       * Cleanup function: remove roles from users, probably delete roles as well
+        if (config.whitelistedChannelIDsForPingableRole.includes(newState.channel.id)) {
+            if (!newState.guild.roles.cache.some(role => role.name === newState.channel.name)) {
+                newState.guild.roles.create({
+                    data: {
+                        name: newState.channel.name,
+                        color: 'RED',
+                        permissions: 0,
+                        mentionable: true
+                    },
+                    reason: 'User joined channel whitelisted for role creation'
+                }).then(() => {
+                    const role = newState.member.guild.roles.cache.find(role => role.name === newState.channel.name)
+                    newState.member.roles.add(role)
+                    console.log(`${moment().format()} Created role ${role.name} and assigned to ${memberInfo(newState.member)}`)
+                }).catch(() => {
+                    console.log(`${moment().format()} Failed to create role for channel`)
+                })
+            } else {
+                const role = newState.member.guild.roles.cache.find(role => role.name === newState.channel.name)
+                newState.member.roles.add(role)
+                console.log(`${moment().format()} Assigned existing role ${role.name} to member ${memberInfo(newState.member)}`)
+            }
+        }
+
+        /* Change name on user join channel */
         removeTimerForMember(newState.member)
 
         if (newState.channel.members.size >= minimumNumberOfUsers) {
@@ -72,15 +97,18 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             console.log(`${moment().format()} Minimum number of members in channel is not reached`)
         }
     } else if (userLeftChannel) {
-        // remove role
-
         console.log(`${moment().format()} <- ${memberInfo(newState.member)} left ${oldState.channel.name}`)
         removeTimerForMember(newState.member)
 
+        /* Remove pingable channel role from user on channel leave */
+        const role = newState.member.guild.roles.cache.find(role => role.name === oldState.channel.name)
+        newState.member.roles.remove(role)
+        console.log(`${moment().format()} Removed role ${role.name} from ${memberInfo(newState.member)}`)
+
+        /* Remove name prefix on channel leave */
         if (newState.member.displayName.startsWith(namePrefix)) {
             setNicknameForMember(newState.member.displayName.replace(namePrefix, ''), newState.member)
         }
-
     }
 })
 
