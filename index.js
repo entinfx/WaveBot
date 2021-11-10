@@ -102,8 +102,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
         /* Remove pingable channel role from user on channel leave */
         const role = newState.member.guild.roles.cache.find(role => role.name === oldState.channel.name)
-        newState.member.roles.remove(role)
-        console.log(`${moment().format()} Removed role ${role.name} from ${memberInfo(newState.member)}`)
+        if (role) {
+            newState.member.roles.remove(role)
+            console.log(`${moment().format()} Removed role ${role.name} from ${memberInfo(newState.member)}`)
+        } else {
+            console.log(`${moment().format()} No channel role found to remove for ${memberInfo(newState.member)}`)
+        }
 
         /* Remove name prefix on channel leave */
         if (newState.member.displayName.startsWith(namePrefix)) {
