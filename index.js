@@ -112,7 +112,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     }
 })
 
-client.login(process.env.WAVEBOT_TOKEN)
+if (process.env.NODE_ENV === 'production') {
+    client.login(process.env.WAVEBOT_TOKEN_PRODUCTION)
+} else if (process.env.NODE_ENV === 'development') {
+    client.login(process.env.WAVEBOT_TOKEN_DEVELOPMENT)
+}
 
 function memberInfo(member) {
     return `${member.guild.name}: ${member.displayName} (${member.user.tag})`
