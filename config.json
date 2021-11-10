@@ -1,0 +1,11 @@
+{
+    "namePrefix": "+👋",
+    "namePrefixTimeoutLength": "7000",
+    "minimumNumberOfUsers": "2",
+    "whitelistedChannelIDsForPingableRole": [
+        "736236698391806063",
+        "812779639457972245",
+        "779455089667735562",
+        "683410293229223945"
+    ]
+}
