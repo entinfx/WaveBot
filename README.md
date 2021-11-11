@@ -10,5 +10,5 @@ $ WAVEBOT_TOKEN=your_discord_bot_token node index.js
 ```
 
 ### TODO
-* Graceful shutdown (e.g. reset nicknames on shutdown)
+* Add persistance with DB. Allow user based settable prefixes.
 * Add command interface to set/lookup prefix character
