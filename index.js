@@ -10,7 +10,7 @@ const minimumNumberOfUsers = parseInt(config.minimumNumberOfUsers) // inclusive
 const namePrefixTimeoutLength = parseInt(config.namePrefixTimeoutLength)
 
 let timers = new Map()
-// let channelRoles = new Array()
+let userNamePrefixes = new Map()
 
 // console.log(`${moment().format()} Starting in ${process.env.NODE_ENV.toUpperCase()}`)
 
@@ -22,8 +22,9 @@ client.on('ready', () => {
         message.channel.send('┬─┬ ノ( ゜-゜ノ)')
     })
 
-    command(client, '!', ['countdown'], message => {
-        message.channel.send(moment().to([2021, 9, 28]))
+    command(client, '!', ['prefix'], message => {
+        // 1. Check if text channel ID is correct for changing prefix
+        // 
     })
 })
 
@@ -35,9 +36,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     if (userJoinedChannel) {
         console.log(`${moment().format()} -> ${memberInfo(newState.member)} joined ${newState.channel.name}${previousChannel}`)
 
-        // Bandaid cause I cba it's 5 in the morning
-        // TODO: Clean up old toles on channel switch. The 'userLeftChannel' branch doesn't fire
-        //       on channel switch, only on full leave
+        /* If user switched channel, remove old role */
         if (oldState.channel) {
             const oldRole = newState.member.guild.roles.cache.find(role => role.name === oldState.channel.name)
             if (oldRole) {
@@ -47,10 +46,6 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         }
 
         /* Create pingable channel role on user join channel */
-        // WARNING: First ID in config contains test server ID. Check before pushing in production!
-        // TODO: * Make roles pingable only by subs
-        //       * Store role ID's and users in a map
-        //       * Cleanup function: remove roles from users, probably delete roles as well
         if (config.whitelistedChannelIDsForPingableRole.includes(newState.channel.id)) {
             if (!newState.guild.roles.cache.some(role => role.name === newState.channel.name)) {
                 newState.guild.roles.create({
